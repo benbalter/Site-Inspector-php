@@ -46,13 +46,13 @@ $inspector = new SiteInspector;
 	<h2>DNS Record</h2>
 	
 	<h3>Basic Record</h3>
-	<?php $records = dns_get_record($_GET['domain'],DNS_ANY, $authns, $addtl); format_records($records); ?>
+	<?php //$records = dns_get_record($_GET['domain'],DNS_ANY, $authns, $addtl); format_records($records); ?>
 
 	
 	<h3>Name Servers</h3>
-	<?php format_records($authns); ?>
+	<?php //format_records($authns); ?>
 	<h3>Additional Records</h3>
-	<?php format_records($addtl); ?>
+	<?php //format_records($addtl); ?>
 	<?php 	
 	$hosts = gethostbynamel($_GET['domain']);
 	if ($hosts) { ?>

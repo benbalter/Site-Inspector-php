@@ -1,6 +1,22 @@
 <?php
 
+/*
+ can be run as:
+ $inspector = new SiteInspector;
+
+ $inspector->domain = 'ben.balter.com';
+ $data = $inspector->inspect();
+ 
+ or 
+ 
+ $data = $inspector->inspect( 'ben.balter.com' );
+ 
+*/
+
 class SiteInspector {
+	
+	static $instance;
+
 	
 	public $oss = array( 
 					'apache', 'nginx'
@@ -26,12 +42,31 @@ class SiteInspector {
 					'prototype', 'jquery', 'mootools', 'dojo', 'scriptaculous',
 					);
 					
-	public $ua = '';
+	public $ua = 'Site Inspector';
+	
+	public $domain = '';
+	public $data = null;
 
 	function __construct() {
-	 
+		self::$instance = $this;
 	}
 
+	function __set( $name, $value ) {
+		$this->data[$name] = $value;
+	}
+	
+	function __get( $name ) {
+		if (array_key_exists($name, $this->data))
+            return $this->data[$name];
+			
+        $trace = debug_backtrace();
+        trigger_error(
+            'Undefined property via __get(): ' . $name .
+            ' in ' . $trace[0]['file'] .
+            ' on line ' . $trace[0]['line'],
+            E_USER_NOTICE);
+        return null;			
+	}
 
 	function check_apps( $body, $apps ) {
 		$output = array();
@@ -46,9 +81,6 @@ class SiteInspector {
 
 	function check_nonwww( $domain ) {
 	
-		//strip WWW just in case
-		$domain = str_ireplace('www.', '', $domain);
-
 		$dns = dns_get_record($domain, DNS_ANY);
 		foreach ( $dns as $record ) {
 			 if ( isset( $record['type'] ) && ( $record['type'] == 'A' || $record['type'] == 'CNAME' ) )
@@ -84,7 +116,23 @@ class SiteInspector {
 
 	}
 
-	function inspect ( $domain ) {
+	function inspect ( $domain = '' ) {
+	
+		//set the public if an arg is passed
+		if ( $domain != '' )
+			$this->$domain = $domain;
+	
+		//if we don't have a domain, kick
+		if ( $this->domain == '') 
+			return false;
+			
+		//cleanup domain
+		$this->maybe_add_http( );
+		$this->remove_www( );
+		
+		//cleanup public vars
+		$this->body = '';
+		$this->headers = '';
 		
 		//setup output array
 		$output['domain'] = $domain;
@@ -115,30 +163,101 @@ class SiteInspector {
 		//check google apps 
 		$output['gapps'] = $this->check_gapps ( $dns, $addtl );
 		
-		//Curl the page
-		$data = wp_remote_get( 'http://' . $domain, array('user-agent' => $this->ua ) );
-
-		//verify the domain exists
-		if ( is_wp_error( $data ) ) {
-			$output['status'] = 0;
-		} else {
+		//grab the page
+		$data = $this->remote_get( $this->domain );
 		
-			$body = wp_remote_retrieve_body( $data );
+		//if there was an error, kick
+		if ( !$data )
+			return false;
+		
+		$this->data['body'] = $data['body'];
+		$this->data['headers'] = $data['headers'];
+	
 			
 			//mark server
 			if ( isset( $data['headers']['server'] ) ) {
-				$output['software'] = $data['headers']['server'];
-				$output['opensource'] = check_string( $output['software'], $this->oss );
+				$this->data['software'] = $data['headers']['server'];
+				$this->data['opensource'] = check_string( $output['software'], $this->oss );
 			} 
 		
-			$output['cms'] = check_apps( $body, $this->cms );
-			$output['analytics'] = check_apps( $body, $this->analytics );
-			$output['scripts'] = check_apps( $body, $this->scripts );
-			
-		}
-		
+			$this->data['cms'] = check_apps( $body, $this->cms );
+			$this->data['analytics'] = check_apps( $body, $this->analytics );
+			$this->data['scripts'] = check_apps( $body, $this->scripts );
+				
 		return $output;
 	}
+	
+	function remote_get( $domain ) {
+		
+		//prefer WP's HTTP API
+		if ( function_exists( 'wp_remote_get') ) {
+			
+			$data = wp_remote_get( $this->domain , array('user-agent' => $this->ua ) );
+
+			//verify the domain exists
+			if ( is_wp_error( $data ) )
+				return false;
+		
+			return $data;
+		
+		}
+		
+		//non WP fallback
+		
+		//grab body
+		$data['body'] = file_get_contents( $this->domain );
+		
+		//if fopen failed for some reason, kick
+		if ( $data['body'] == false )
+			return false;
+	
+		//grab the headers
+		$data['headers'] = get_headers ( $this->domain );
+	
+		return $data;
+	
+	}
+	
+	function maybe_add_http( $input = '' ) {
+		
+		//allow arg to be optional
+		if ( $input == '' ) 
+			$domain = $this->domain;
+		else
+			$domain = $input;
+		
+		$domain = ( substr( $domain, 0, 7) == 'http://' ) ? $domain : 'http://' . $domain;
+		
+		//if no domain was passed, asume we should update the class
+		if ( $input == '' )
+			$this->domain = $domain;
+			
+		return $domain;
+		
+	}
+	
+	function remove_www( $input = '' ) {
+		
+		//allow domain to be optional
+		if ( $input == '' )
+			$domain = $this->domain;
+		else 
+			$domain = $input;
+			
+		//force http so check will work
+		$domain = $this->maybe_add_http( $domain );
+	
+		//kill the www
+		$domain = str_ireplace('http://www.', 'http://', $domain);
+		
+		//if no domain arg was passed, update the class
+		if ( $input == '' )
+			$this->domain = $domain;
+		
+		return $domain;
+		
+	}
+	
 
 	function check_gapps ( $dns, $additional ) {
 

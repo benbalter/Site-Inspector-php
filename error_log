@@ -3,3 +3,10 @@
 [15-Jun-2011 10:20:32] PHP Fatal error:  Call to undefined function  check_ipv6() in /home8/benbalte/public_html/sandbox/site-inspector/class-site-inspector.php on line 101
 [15-Jun-2011 10:20:38] PHP Fatal error:  Call to undefined function  check_string() in /home8/benbalte/public_html/sandbox/site-inspector/class-site-inspector.php on line 109
 [15-Jun-2011 10:20:55] PHP Fatal error:  Call to undefined function  wp_remote_get() in /home8/benbalte/public_html/sandbox/site-inspector/class-site-inspector.php on line 119
+[15-Jun-2011 11:00:53] PHP Parse error:  syntax error, unexpected T_RETURN, expecting T_FUNCTION in /home8/benbalte/public_html/sandbox/site-inspector/class-site-inspector.php on line 186
+[15-Jun-2011 11:01:05] PHP Parse error:  syntax error, unexpected '{' in /home8/benbalte/public_html/sandbox/site-inspector/class-site-inspector.php on line 190
+[15-Jun-2011 11:01:15] PHP Parse error:  syntax error, unexpected T_IF in /home8/benbalte/public_html/sandbox/site-inspector/class-site-inspector.php on line 208
+[15-Jun-2011 11:01:23] PHP Fatal error:  Access to undeclared static property: SiteInspector::$instance in /home8/benbalte/public_html/sandbox/site-inspector/class-site-inspector.php on line 48
+[15-Jun-2011 11:01:54] PHP Fatal error:  Call to undefined function  format_records() in /home8/benbalte/public_html/sandbox/site-inspector/index.php on line 49
+[15-Jun-2011 11:02:09] PHP Fatal error:  Call to undefined function  format_records() in /home8/benbalte/public_html/sandbox/site-inspector/index.php on line 49
+[15-Jun-2011 11:02:14] PHP Fatal error:  Call to undefined function  format_records() in /home8/benbalte/public_html/sandbox/site-inspector/index.php on line 49
