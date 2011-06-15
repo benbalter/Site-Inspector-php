@@ -1,0 +1,5 @@
+[15-Jun-2011 10:19:15] PHP Fatal error:  Call to undefined function  inspect() in /home8/benbalte/public_html/sandbox/site-inspector/index.php on line 32
+[15-Jun-2011 10:19:57] PHP Fatal error:  Call to undefined function  check_nonwww() in /home8/benbalte/public_html/sandbox/site-inspector/class-site-inspector.php on line 95
+[15-Jun-2011 10:20:32] PHP Fatal error:  Call to undefined function  check_ipv6() in /home8/benbalte/public_html/sandbox/site-inspector/class-site-inspector.php on line 101
+[15-Jun-2011 10:20:38] PHP Fatal error:  Call to undefined function  check_string() in /home8/benbalte/public_html/sandbox/site-inspector/class-site-inspector.php on line 109
+[15-Jun-2011 10:20:55] PHP Fatal error:  Call to undefined function  wp_remote_get() in /home8/benbalte/public_html/sandbox/site-inspector/class-site-inspector.php on line 119

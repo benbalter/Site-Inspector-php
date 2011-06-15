@@ -92,13 +92,13 @@ class SiteInspector {
 		$output['ipv6'] = 0;
 		
 		//check nonwww
-		$output['nonwww'] = check_nonwww( $domain );
+		$output['nonwww'] = $this->check_nonwww( $domain );
 		
 		//get DNS
 		$dns = dns_get_record( $domain ,DNS_ANY, $authns, $addtl);
 		
 		//IPv6
-		$output['ipv6'] = check_ipv6( $dns );
+		$output['ipv6'] = $this->check_ipv6( $dns );
 		
 		//IP & Host
 		$ip =  gethostbynamel( $domain );
@@ -106,14 +106,14 @@ class SiteInspector {
 		@ $output['host'] = gethostbyaddr( $output['ip'] );
 		
 		//check CDN
-		$output['cdn'] = check_string( $output['host'], $this->cdn );
+		$output['cdn'] = $this->check_string( $output['host'], $this->cdn );
 		
 		//check cloud
 		if ( $output['cdn'] == 0 )
-			$output['cloud'] = check_string( $output['host'], $this->cloud );
+			$output['cloud'] = $this->check_string( $output['host'], $this->cloud );
 		
 		//check google apps 
-		$output['gapps'] = check_gapps ( $dns, $addtl );
+		$output['gapps'] = $this->check_gapps ( $dns, $addtl );
 		
 		//Curl the page
 		$data = wp_remote_get( 'http://' . $domain, array('user-agent' => $this->ua ) );
