@@ -40,7 +40,6 @@
 	//user agent to identify as
 	public $ua = 'Site Inspector';
 	
-	public $domain = '';
 	public $data = null;
 
 	/**
@@ -58,7 +57,7 @@
 	 * @param mixed $value data value 
 	 */
 	function __set( $name, $value ) {
-		$this->data[$name] = $value;
+		$this->data[ $name ] = $value;
 	}
 	
 	/**
@@ -68,8 +67,9 @@
 	 * @returns mixed the value requested
 	 */
 	function __get( $name ) {
-		if (array_key_exists($name, $this->data))
-            return $this->data[$name];
+	
+		if ( array_key_exists($name, $this->data) )
+            return $this->data[ $name ];
 			
         $trace = debug_backtrace();
         trigger_error(
@@ -114,9 +114,9 @@
 	function check_nonwww( $domain  = '' ) {
 	
 		$domain = $this->get_domain( $domain );
-	
+		
 		//grab the DNS
-		$dns = dns_get_record($domain, DNS_ANY);
+		$dns = $this->get_dns_record( $domain );
 		
 		//check for for CNAME or A record on non-www
 		foreach ( $dns as $record ) {
@@ -125,8 +125,8 @@
 		}
 		
 		//if there's no non-www, subsequent actions should be taken on www. instead of the TLD.
-		$this->domain = $this->add_www ( $domain );
-		
+		$this->domain = $this->maybe_add_www ( $domain );
+				
 		return false;
 
 	}
@@ -210,7 +210,7 @@
 	 * @returns string the true domain
 	 */
 	function get_domain( $domain ) {
-		
+
 		if ( $domain != '' )
 			return $domain;
 		
@@ -229,8 +229,8 @@
 	 */
 	function get_dns_record( $domain  = '' ) {
 	
-		$domain = $this->get_domain( $domain );
-	
+		$domain =  $this->remove_http( $this->get_domain( $domain ) );
+		
 		if ( !isset ( $this->data['dns'] ) )
 			$this->data['dns'] = dns_get_record( 	$domain, 
 													DNS_ALL, 
@@ -249,68 +249,73 @@
 	 * @returns array data array
 	 */
 	function inspect ( $domain = '' ) {
+	
+		//cleanup public vars
+		$this->body = '';
+		$this->headers = '';
+		$this->data = array();
 
-	//set the public if an arg is passed
+		//set the public if an arg is passed
 		if ( $domain != '' )
 			$this->domain = $domain;
 
 		//if we don't have a domain, kick
 		if ( $this->domain == '') 
 			return false;
-
+			
+		
 		//cleanup domain
 		$this->maybe_add_http( );
 		$this->remove_www( );
-		
-		//cleanup public vars
-		$this->body = '';
-		$this->headers = '';
-		$this->data = array();
-		
+
 		//check nonwww
-		$this->data['nonwww'] = $this->check_nonwww( );
+		$this->nonwww = $this->check_nonwww( );
 		
 		//get DNS
-		$dns = dns_get_record( $domain ,DNS_ANY, $authns, $addtl);
+		$dns = $this->get_dns_record( $domain );
 		
 		//IPv6
-		$this->data['ipv6'] = $this->check_ipv6( $dns );
+		$this->ipv6 = $this->check_ipv6( $dns );
 		
 		//IP & Host
 		$ip =  gethostbynamel( $domain );
-		$this->data['ip'] = $ip[0];
-		@ $this->data['host'] = gethostbyaddr( $this->data['ip'] );
+		$this->ip = $ip[0];
+		@ $this->host = gethostbyaddr( $this->data['ip'] );
 		
 		//check CDN
-		$this->data['cdn'] = $this->find_needles_in_haystack( $this->cdn,  $this->data['host']);
+		$this->cdn = $this->find_needles_in_haystack( $this->cdn,  $this->host );
 		
 		//check cloud
-		if ( $this->data['cdn'] == 0 )
-			$this->data['cloud'] = $this->find_needles_in_haystack( $this->cloud, $this->data['host'] );
+		if ( $this->cdn == false )
+			$this->cloud = $this->find_needles_in_haystack( $this->cloud, $this->host );
 		
 		//check google apps 
-		$this->data['gapps'] = $this->check_gapps ( $this->data['dns'], $this->data['dns']['addtl'] );
+		$this->data['gapps'] = $this->check_gapps ( $this->dns, $this->data['dns']['addtl'] );
 		
 		//grab the page
 		$data = $this->remote_get( $this->domain );
 
 		//if there was an error, kick
 		if ( !$data ) {
-			$this->data['status'] = 'unreachable';
+			$this->status = 'unreachable';
 			return false;
 		}
 		
-		$this->data['body'] = $data['body'];
-		$this->data['headers'] = $data['headers'];
+		$this->status = 'live';
+		
+		$this->body = $data['body'];
+		$this->headers = $data['headers'];
 				
 			if ( isset( $data['headers']['server'] ) ) {
-				$this->data['server_software'] = $data['headers']['server'];
+				$this->server_software = $data['headers']['server'];
 			} 
 		
-			$this->data['cms'] = $this->check_apps( $body, $this->cms );
-			$this->data['analytics'] = $this->check_apps( $body, $this->analytics );
-			$this->data['scripts'] = $this->check_apps( $body, $this->scripts );
+			$this->cms = $this->check_apps( $body, $this->cms );
+			$this->analytics = $this->check_apps( $body, $this->analytics );
+			$this->scripts = $this->check_apps( $body, $this->scripts );
 				
+		asort( $this->data );
+		
 		return $this->data;
 	}
 	
@@ -367,12 +372,27 @@
 		
 		$domain = ( substr( $domain, 0, 7) == 'http://' ) ? $domain : 'http://' . $domain;
 		
+		
 		//if no domain was passed, asume we should update the class
 		if ( $input == '' )
 			$this->domain = $domain;
 			
 		return $domain;
 		
+	}
+	
+	function remove_http ( $input ) {
+	
+		$domain = $this->get_domain( $input );
+			
+		//kill the http
+		$domain = str_ireplace('http://', '', $domain);
+		
+		//if no domain arg was passed, update the class
+		if ( $input == '' )
+			$this->domain = $domain;
+		
+		return $domain;
 	}
 	
 	/**
@@ -405,7 +425,7 @@
 	 * @param string $input the domain
 	 * @returns string the domain with www.
 	 */
-	function add_www ( $input = '' ) {
+	function maybe_add_www ( $input = '' ) {
 
 		$domain = $this->get_domain( $input );
 

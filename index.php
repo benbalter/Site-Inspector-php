@@ -5,13 +5,17 @@ $inspector = new SiteInspector;
 if ( isset ( $_GET['domain'] ) )
 	$data = $inspector->inspect ( $_GET['domain'] );
 	
-if ( isset ( $_GET['format'] ) && $_GET['format'] == 'json' )
+if ( isset ( $_GET['format'] ) && $_GET['format'] == 'json' ) {
 	echo json_encode( $data );
-	
-//debugging
+	exit(); 
+}
+
+//debugging 
+/*
 echo "<PRE>";
-print_r ( $data );
+var_dump ( $data );
 die();
+*/
 ?>
 <!doctype html>
 <html lang="en" class="no-js">
@@ -43,7 +47,6 @@ die();
 		
 	<h2>Software</h2>	
 		
-		<?php $data = $inspector->inspect ( $_GET['domain'] ); print_r($data); ?>
 		<ul>
 			<li><div class="label">Status:</div> <?php echo ( $data['status'] ) ? 'Online' : 'Unnavailable'; ?></li>
 			<li><div class="label">IPv6 Support:</div> <?php echo ( $data['ipv6'] ) ? 'Yes' : 'No'; ?></li>
