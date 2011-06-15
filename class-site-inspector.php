@@ -270,6 +270,7 @@
 		//cleanup domain
 		$this->maybe_add_http( );
 		$this->remove_www( );
+		$this->domain = strtolower( $this->domain);
 
 		//check nonwww
 		$this->nonwww = $this->check_nonwww( );
