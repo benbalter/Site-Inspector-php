@@ -1,23 +1,18 @@
 <?php
+/**
+ * Site Inspector Class
+ *
+ * @author Benjamin J. Blater
+ * @version 0.1
+ * @pacakge siteinspector
+ * @license GPL2
+ */
 
-/*
- can be run as:
- $inspector = new SiteInspector;
-
- $inspector->domain = 'ben.balter.com';
- $data = $inspector->inspect();
- 
- or 
- 
- $data = $inspector->inspect( 'ben.balter.com' );
- 
-*/
-
-class SiteInspector {
+ class SiteInspector {
 	
 	static $instance;
-
 	
+	//defaults to look for; can be overriden by user
 	public $oss = array( 
 					'apache', 'nginx'
 					);
@@ -41,20 +36,37 @@ class SiteInspector {
 	public $scripts = array( 
 					'prototype', 'jquery', 'mootools', 'dojo', 'scriptaculous',
 					);
-					
+	
+	//user agent to identify as
 	public $ua = 'Site Inspector';
 	
 	public $domain = '';
 	public $data = null;
 
+	/**
+	 * Initiates the class
+	 * @since 0.1
+	 */
 	function __construct() {
 		self::$instance = $this;
 	}
 
+	/**
+	 * Allows user to overload data array
+	 * @since 0.1
+	 * @param string $name data key
+	 * @param mixed $value data value 
+	 */
 	function __set( $name, $value ) {
 		$this->data[$name] = $value;
 	}
 	
+	/**
+	 * Returns property from data array
+	 * @since 0.1
+	 * @param string $name data key
+	 * @returns mixed the value requested
+	 */
 	function __get( $name ) {
 		if (array_key_exists($name, $this->data))
             return $this->data[$name];
@@ -68,6 +80,7 @@ class SiteInspector {
         return null;			
 	}
 
+	
 	function check_apps( $body, $apps ) {
 		$output = array();
 		
@@ -115,7 +128,29 @@ class SiteInspector {
 		return 0;
 
 	}
+	
+	function check_gapps ( $dns, $additional ) {
 
+		foreach ($dns as $k=> $record) {
+			
+			if ( isset($record['type']) && $record['type'] == 'MX') {
+
+				if ( stripos( $additional[$k]['host'], 'google') !== FALSE)		
+					return 1;
+			}
+		
+		}
+		
+		return 0;
+		
+	}
+
+	/**
+	 * Main function of the class; propegates data array
+	 * @since 0.1
+	 * @param string $domain domain to inspect
+	 * @returns array data array
+	 */
 	function inspect ( $domain = '' ) {
 	
 		//set the public if an arg is passed
@@ -187,12 +222,23 @@ class SiteInspector {
 		return $output;
 	}
 	
-	function remote_get( $domain ) {
+	/**
+	 * Smart remote get function
+	 *  
+	 * Prefers wp_remote_get, but falls back to file_get_contents
+	 * @param $domain string site to retrieve
+	 * @returns array assoc. array of page data
+	 * @since 0.1
+	 */
+	function remote_get( $domain = '') {
+		
+		if ( $domain == '')
+			$domain = $this->domain;
 		
 		//prefer WP's HTTP API
 		if ( function_exists( 'wp_remote_get') ) {
 			
-			$data = wp_remote_get( $this->domain , array('user-agent' => $this->ua ) );
+			$data = wp_remote_get( $domain , array('user-agent' => $this->ua ) );
 
 			//verify the domain exists
 			if ( is_wp_error( $data ) )
@@ -218,6 +264,12 @@ class SiteInspector {
 	
 	}
 	
+	/**
+	 * Conditionally prepends http:// to a string
+	 * @since 0.1
+	 * @param string $input domain to modify
+	 * @returns string modified domain
+	 */
 	function maybe_add_http( $input = '' ) {
 		
 		//allow arg to be optional
@@ -236,6 +288,12 @@ class SiteInspector {
 		
 	}
 	
+	/**
+	 * Removes www from domains
+	 * @since 0.1
+	 * @param string $input domain
+	 * @returns string domain with www removed
+	 */
 	function remove_www( $input = '' ) {
 		
 		//allow domain to be optional
@@ -255,23 +313,6 @@ class SiteInspector {
 			$this->domain = $domain;
 		
 		return $domain;
-		
-	}
-	
-
-	function check_gapps ( $dns, $additional ) {
-
-		foreach ($dns as $k=> $record) {
-			
-			if ( isset($record['type']) && $record['type'] == 'MX') {
-
-				if ( stripos( $additional[$k]['host'], 'google') !== FALSE)		
-					return 1;
-			}
-		
-		}
-		
-		return 0;
 		
 	}
 
