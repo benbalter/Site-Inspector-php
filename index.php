@@ -13,7 +13,8 @@ if ( isset ( $_GET['format'] ) && $_GET['format'] == 'json' ) {
 //debugging 
 /*
 echo "<PRE>";
-var_dump ( $data );
+unset ( $data['body'] );
+print_r ( $data );
 die();
 */
 ?>
@@ -22,7 +23,7 @@ die();
 <head>
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-	<title>Site Inspector</title>
+	<title>Site Inspector<?php if ( !empty($_GET['domain'] ) ) { ?> | Details for <?php echo $inspector->domain; ?><? } ?></title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="css/style.css?v=2">
 </head>
@@ -36,7 +37,7 @@ die();
 			</form>
 			<?php if ( !empty($_GET['domain'] ) ) { ?>
 
-			<h1>Details for <?php echo $_GET['domain']; ?></h1>
+			<h1>Details for <?php echo $inspector->domain; ?> </h1>
 
 
 						
@@ -45,18 +46,35 @@ die();
 		<div id="main" role="main">
 		
 		
-	<h2>Software</h2>	
+	<h2>Basic Information</h2>	
 		
 		<ul>
-			<li><div class="label">Status:</div> <?php echo ( $data['status'] ) ? 'Online' : 'Unnavailable'; ?></li>
-			<li><div class="label">IPv6 Support:</div> <?php echo ( $data['ipv6'] ) ? 'Yes' : 'No'; ?></li>
-			<li><div class="label">Non-WWW Support:</div>  <?php echo ( $data['nonwww'] ) ? 'Yes' : 'No'; ?></li>
-			<li><div class="label">CDN:</div> <?php echo ( $data['cdn'] ) ? 'Yes' : 'No'; ?></li>
-			<li><div class="label">Cloud:</div> <?php echo ( $data['cloud'] ) ? 'Yes' : 'No'; ?></li>
-			<li><div class="label">Google Apps:</div> <?php echo ( $data['gapps'] ) ? 'Yes' : 'No'; ?></li>
-			<li><div class="label">Server Software:</div> <?php echo $data['software']; ?></li>
-			<li><div class="label">CMS:</div> <?php echo $data['cms']; ?></li>
+			<li><div class="label">Status:</div> <?php echo $inspector->status; ?></li>
+			<li><div class="label">IPv6 Support:</div> <?php echo ( $inspector->ipv6 ) ? 'Yes' : 'No'; ?></li>
+			<li><div class="label">Non-WWW Support:</div>  <?php echo ( $inspector->nonwww ) ? 'Yes' : 'No'; ?></li>
+			<li><div class="label">CDN:</div> <?php echo ( $inspector->cdn ) ? 'Yes' : 'No'; ?></li>
+			<li><div class="label">Cloud:</div> <?php echo ( $inspector->cloud ) ? 'Yes' : 'No'; ?></li>
 		</ul>
+	<h2>Software</h2>
+		<ul>
+			<li><div class="label">Google Apps:</div> <?php echo ( $inspector->gapps ) ? 'Yes' : 'No'; ?></li>
+			<li><div class="label">Server Software:</div> <?php echo $data['server_software']; ?></li>
+			<li><div class="label">CMS:</div> <?php echo $inspector->cms; ?></li>
+		</ul>
+	<h2>Headers</h2>
+		<ul>
+		<?php foreach ( $inspector->headers as $k=>$v) { ?>
+			<li><div class="label"><?php echo $k; ?>:</div> <?php if ( is_array( $v ) ) print_r( $v ); else echo $v; ?></li>
+		<?php } ?>
+		</ul>
+	<?php if ( isset ( $data['redirect'] ) ) { ?>
+	<h2>Redirects</h2>
+	<ul>
+	<?php foreach ( $data['redirect'] as $r) { ?>
+		<li><div class="label"><?php echo $r['code']; ?>:</div> <?php echo $r['destination']; ?></li>
+	<?php } ?>
+	</ul>
+	<?php } ?>
 	<h2>DNS Record</h2>
 	
 	<h3>Basic Record</h3>

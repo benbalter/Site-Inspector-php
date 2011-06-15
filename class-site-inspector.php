@@ -40,6 +40,9 @@
 	//user agent to identify as
 	public $ua = 'Site Inspector';
 	
+	//whether to follow location headers
+	public $follow = 5;
+		
 	public $data = null;
 
 	/**
@@ -300,7 +303,7 @@
 			$this->status = 'unreachable';
 			return false;
 		}
-		
+					
 		$this->status = 'live';
 		
 		$this->body = $data['body'];
@@ -330,7 +333,7 @@
 	function remote_get( $domain = '' ) {
 		
 		$domain = $this->get_domain( $domain );
-		
+				
 		//prefer WP's HTTP API
 		if ( function_exists( 'wp_remote_get') ) {
 			
@@ -340,6 +343,8 @@
 			if ( is_wp_error( $data ) )
 				return false;
 		
+			$data = $this->maybe_follow_location_header ( $data );
+
 			return $data;
 		
 		}
@@ -347,17 +352,46 @@
 		//non WP fallback
 		
 		//grab body
-		$data['body'] = file_get_contents( $this->domain );
+		$data['body'] = file_get_contents( (string) $this->domain );
 		
 		//if fopen failed for some reason, kick
 		if ( $data['body'] == false )
 			return false;
 	
 		//grab the headers
-		$data['headers'] = get_headers ( $this->domain );
-	
+		$data['headers'] = get_headers ( $this->domain, 1 );
+		
+		$data = $this->maybe_follow_location_header ( $data );
+		
 		return $data;
 	
+	}
+	
+	function maybe_follow_location_header ( $data ) {
+		
+		//check flag
+		if ( !$this->follow )
+			return $data;
+
+		//if there's a location header, follow
+		if ( !isset ( $data['headers']['Location'] ) ) 
+			return $data;
+		
+		//if this is not the first redirect, check to see if we're in a loop
+		if ( is_array( $this->data['redirect'] ) ) {
+			$last = array_pop ( $this->data['redirect'] );
+			
+			if ( $data['headers']['Location'] == $last['destination'] )
+				return $data;
+		}
+		
+		//store the redirect 
+		$this->data['redirect'][] = array( 'code' => $data['headers'][0], 'destination' => $data['headers']['Location'] );
+		
+		if ( sizeof( $this->data['redirect'] ) > $this->follow )
+			$data = $this->remote_get( $data['headers']['Location'] );
+	
+		return $data;
 	}
 	
 	/**
