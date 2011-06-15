@@ -81,6 +81,17 @@
 	}
 
 	function check_apps( $body, $apps ) {
+	
+		//TO DO
+		return array();
+		
+		/**
+		 * Should Check inside script tags
+		 * Should check external scripts
+		 * Should check SRC Paths of all tags on page (within same domain)
+		 *
+		
+		
 		$output = array();
 		
 		foreach ($apps as $app) {
@@ -89,6 +100,7 @@
 		}
 		
 		return $output;
+		*/
 	}
 
 	/**
@@ -138,16 +150,25 @@
 		return false;
 	}
 
-	function check_ipv6 ( $dns ) {
-
+	/**
+	 * Checks for an AAAA record on a domain
+	 * @since 0.1
+	 * @param array $dns the DNS Records
+	 * @returns bool true if ipv6, otherwise false
+	 */
+	function check_ipv6 ( $dns = '' ) {
+		
+		if ( $dns == '' ) 
+			$dns = get_dns_record();
+	
 		foreach ($dns as $record) {
 			if ( isset($record['type']) && $record['type'] == 'AAAA') {
 			
-				return 1;
+				return true;
 			}
 		}
 		
-		return 0;
+		return false;
 
 	}
 	
