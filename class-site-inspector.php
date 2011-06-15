@@ -3,7 +3,7 @@
 class SiteInspector {
 	
 	public $oss = array( 
-					'apache',
+					'apache', 'nginx'
 					);
 
 	public $cloud = array( 
@@ -29,7 +29,7 @@ class SiteInspector {
 	public $ua = '';
 
 	function __construct() {
-	
+	 
 	}
 
 
@@ -43,36 +43,6 @@ class SiteInspector {
 		
 		return $output;
 	}
-
-	function format_records($records) { ?>
-		<table>
-			<tr>
-				<th>Host</th>
-				<th>Class</th>
-				<th>Type</th>
-				<th>TTL</th>
-				<th>Additional Info</th>
-			</tr>
-		<?php
-		foreach ($records as $record) { ?>
-			<tr>
-				<td><?php echo $record['host']; ?></td>
-				<td><?php echo $record['class']; ?></td>
-				<td><?php echo $record['type']; ?></td>
-				<td><?php echo $record['ttl']; ?></td>
-				<td>
-				<?php 
-					unset($record['host'], $record['class'], $record['type'], $record['ttl']);
-					foreach ($record as $field=>$value) {
-						echo "<strong>$field:</strong> $value<br />";	
-					}
-				?>
-				</td>
-			</tr>
-		<?php } ?>
-		</table>
-	<?php } 
-
 
 	function check_nonwww( $domain ) {
 	
