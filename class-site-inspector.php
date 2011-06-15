@@ -159,7 +159,7 @@
 	function check_ipv6 ( $dns = '' ) {
 		
 		if ( $dns == '' ) 
-			$dns = get_dns_record();
+			$dns = $this->get_dns_record();
 	
 		foreach ($dns as $record) {
 			if ( isset($record['type']) && $record['type'] == 'AAAA') {
@@ -180,10 +180,10 @@
 	function check_gapps ( $dns = '', $additional = '') {
 		
 		if ( $dns == '' ) 
-			$dns = get_dns_record();
+			$dns = $this->get_dns_record();
 		
 		if ( $additional == '' ) {
-			get_dns_record();
+			$this->get_dns_record();
 			$additional = $this->data['dns']['addtl'];
 		}
 		
@@ -249,15 +249,15 @@
 	 * @returns array data array
 	 */
 	function inspect ( $domain = '' ) {
-	
-		//set the public if an arg is passed
+
+	//set the public if an arg is passed
 		if ( $domain != '' )
-			$this->$domain = $domain;
-	
+			$this->domain = $domain;
+
 		//if we don't have a domain, kick
 		if ( $this->domain == '') 
 			return false;
-			
+
 		//cleanup domain
 		$this->maybe_add_http( );
 		$this->remove_www( );
@@ -289,11 +289,11 @@
 			$this->data['cloud'] = $this->find_needles_in_haystack( $this->cloud, $this->data['host'] );
 		
 		//check google apps 
-		$this->data['gapps'] = $this->check_gapps ( $this->dns, $this->data['dns']['addtl'] );
+		$this->data['gapps'] = $this->check_gapps ( $this->data['dns'], $this->data['dns']['addtl'] );
 		
 		//grab the page
 		$data = $this->remote_get( $this->domain );
-		
+
 		//if there was an error, kick
 		if ( !$data ) {
 			$this->data['status'] = 'unreachable';
@@ -307,11 +307,11 @@
 				$this->data['server_software'] = $data['headers']['server'];
 			} 
 		
-			$this->data['cms'] = check_apps( $body, $this->cms );
-			$this->data['analytics'] = check_apps( $body, $this->analytics );
-			$this->data['scripts'] = check_apps( $body, $this->scripts );
+			$this->data['cms'] = $this->check_apps( $body, $this->cms );
+			$this->data['analytics'] = $this->check_apps( $body, $this->analytics );
+			$this->data['scripts'] = $this->check_apps( $body, $this->scripts );
 				
-		return $output;
+		return $this->data;
 	}
 	
 	/**

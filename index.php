@@ -1,6 +1,17 @@
 <?php
 include('class-site-inspector.php'); 
 $inspector = new SiteInspector;
+
+if ( isset ( $_GET['domain'] ) )
+	$data = $inspector->inspect ( $_GET['domain'] );
+	
+if ( isset ( $_GET['format'] ) && $_GET['format'] == 'json' )
+	echo json_encode( $data );
+	
+//debugging
+echo "<PRE>";
+print_r ( $data );
+die();
 ?>
 <!doctype html>
 <html lang="en" class="no-js">
