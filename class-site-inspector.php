@@ -80,7 +80,6 @@
         return null;			
 	}
 
-	
 	function check_apps( $body, $apps ) {
 		$output = array();
 		
@@ -92,28 +91,51 @@
 		return $output;
 	}
 
-	function check_nonwww( $domain ) {
+	/**
+	 * Checks a domain to see if there's a CNAME or A record on the non-www domain
+	 * 
+	 * Updates $this->domain to www. if there's no non-www support
+	 * @since 0.1
+	 * @param string $domain the domain
+	 * @return bool true if non-www works, otherwise false
+	 */
+	function check_nonwww( $domain  = '' ) {
 	
+		$domain = $this->get_domain( $domain );
+	
+		//grab the DNS
 		$dns = dns_get_record($domain, DNS_ANY);
+		
+		//check for for CNAME or A record on non-www
 		foreach ( $dns as $record ) {
 			 if ( isset( $record['type'] ) && ( $record['type'] == 'A' || $record['type'] == 'CNAME' ) )
-				 return 1;
+				 return true;
 		}
 		
-		return 0;
+		//if there's no non-www, subsequent actions should be taken on www. instead of the TLD.
+		$this->domain = $this->add_www ( $domain );
+		
+		return false;
 
 	}
-
-	function check_string ( $haystack, $needles ) {
+	
+	/**
+	 * Loops through an array of needles to see if any are in the haystack
+	 * @param array $needles array of needle strings
+	 * @param string $haystack the haystack
+	 * @returns string|bool needle if found, otherwise false
+	 * @since 0.1
+	 */
+	function find_needles_in_haystack( $needles, $haystack ) {
 		
 		foreach ( $needles as $needle ) {
 
 			if ( stripos( $haystack, $needle ) !== FALSE )
-				return 1;
+				return $needle;
 			
 		}
 
-		return 0;
+		return false;
 	}
 
 	function check_ipv6 ( $dns ) {
@@ -129,22 +151,76 @@
 
 	}
 	
-	function check_gapps ( $dns, $additional ) {
-
+	/**
+	 * Checks DNS records for reference to google apps
+	 * @since 0.1
+	 * @param array $dns DNS returned from dns_get_record
+	 */
+	function check_gapps ( $dns = '', $additional = '') {
+		
+		if ( $dns == '' ) 
+			$dns = get_dns_record();
+		
+		if ( $additional == '' ) {
+			get_dns_record();
+			$additional = $this->data['dns']['addtl'];
+		}
+		
 		foreach ($dns as $k=> $record) {
 			
 			if ( isset($record['type']) && $record['type'] == 'MX') {
 
 				if ( stripos( $additional[$k]['host'], 'google') !== FALSE)		
-					return 1;
+					return true;
 			}
 		
 		}
 		
-		return 0;
+		return false;
 		
 	}
 
+	/**
+	 * Helper function to allow domain arguments to be optional
+	 *
+	 * If domain is passed as an arg, will return that, otherwise will check $this->domain for the domain
+	 * @since 0.1
+	 * @param string $domain the domain
+	 * @returns string the true domain
+	 */
+	function get_domain( $domain ) {
+		
+		if ( $domain != '' )
+			return $domain;
+		
+		if ( $this->domain == '' )
+			die('No Domain Supplied.');
+
+		return $this->domain;
+		
+	}
+	
+	/**
+	 * Retrieves DNS record and caches to $this->data
+	 * @param string $domain the domain
+	 * @returns array dns data
+	 * @since 0.1
+	 */
+	function get_dns_record( $domain  = '' ) {
+	
+		$domain = $this->get_domain( $domain );
+	
+		if ( !isset ( $this->data['dns'] ) )
+			$this->data['dns'] = dns_get_record( 	$domain, 
+													DNS_ALL, 
+													$this->data['dns']['ns'], 
+													$this->data['dns']['addtl']
+												);
+		
+		return $this->data['dns'];
+	
+	}
+	
 	/**
 	 * Main function of the class; propegates data array
 	 * @since 0.1
@@ -168,51 +244,46 @@
 		//cleanup public vars
 		$this->body = '';
 		$this->headers = '';
-		
-		//setup output array
-		$output['domain'] = $domain;
-		$output['status'] = '1';
-		$output['ipv6'] = 0;
+		$this->data = array();
 		
 		//check nonwww
-		$output['nonwww'] = $this->check_nonwww( $domain );
+		$this->data['nonwww'] = $this->check_nonwww( );
 		
 		//get DNS
 		$dns = dns_get_record( $domain ,DNS_ANY, $authns, $addtl);
 		
 		//IPv6
-		$output['ipv6'] = $this->check_ipv6( $dns );
+		$this->data['ipv6'] = $this->check_ipv6( $dns );
 		
 		//IP & Host
 		$ip =  gethostbynamel( $domain );
-		$output['ip'] = $ip[0];
-		@ $output['host'] = gethostbyaddr( $output['ip'] );
+		$this->data['ip'] = $ip[0];
+		@ $this->data['host'] = gethostbyaddr( $this->data['ip'] );
 		
 		//check CDN
-		$output['cdn'] = $this->check_string( $output['host'], $this->cdn );
+		$this->data['cdn'] = $this->find_needles_in_haystack( $this->cdn,  $this->data['host']);
 		
 		//check cloud
-		if ( $output['cdn'] == 0 )
-			$output['cloud'] = $this->check_string( $output['host'], $this->cloud );
+		if ( $this->data['cdn'] == 0 )
+			$this->data['cloud'] = $this->find_needles_in_haystack( $this->cloud, $this->data['host'] );
 		
 		//check google apps 
-		$output['gapps'] = $this->check_gapps ( $dns, $addtl );
+		$this->data['gapps'] = $this->check_gapps ( $this->dns, $this->data['dns']['addtl'] );
 		
 		//grab the page
 		$data = $this->remote_get( $this->domain );
 		
 		//if there was an error, kick
-		if ( !$data )
+		if ( !$data ) {
+			$this->data['status'] = 'unreachable';
 			return false;
+		}
 		
 		$this->data['body'] = $data['body'];
 		$this->data['headers'] = $data['headers'];
-	
-			
-			//mark server
+				
 			if ( isset( $data['headers']['server'] ) ) {
-				$this->data['software'] = $data['headers']['server'];
-				$this->data['opensource'] = check_string( $output['software'], $this->oss );
+				$this->data['server_software'] = $data['headers']['server'];
 			} 
 		
 			$this->data['cms'] = check_apps( $body, $this->cms );
@@ -230,10 +301,9 @@
 	 * @returns array assoc. array of page data
 	 * @since 0.1
 	 */
-	function remote_get( $domain = '') {
+	function remote_get( $domain = '' ) {
 		
-		if ( $domain == '')
-			$domain = $this->domain;
+		$domain = $this->get_domain( $domain );
 		
 		//prefer WP's HTTP API
 		if ( function_exists( 'wp_remote_get') ) {
@@ -272,11 +342,7 @@
 	 */
 	function maybe_add_http( $input = '' ) {
 		
-		//allow arg to be optional
-		if ( $input == '' ) 
-			$domain = $this->domain;
-		else
-			$domain = $input;
+		$domain = $this->get_domain( $input );
 		
 		$domain = ( substr( $domain, 0, 7) == 'http://' ) ? $domain : 'http://' . $domain;
 		
@@ -296,11 +362,7 @@
 	 */
 	function remove_www( $input = '' ) {
 		
-		//allow domain to be optional
-		if ( $input == '' )
-			$domain = $this->domain;
-		else 
-			$domain = $input;
+		$domain = $this->get_domain( $input );
 			
 		//force http so check will work
 		$domain = $this->maybe_add_http( $domain );
@@ -314,6 +376,33 @@
 		
 		return $domain;
 		
+	}
+	
+	/**
+	 * Conditionally adds www to a domain
+	 * @since 0.1
+	 * @param string $input the domain
+	 * @returns string the domain with www.
+	 */
+	function add_www ( $input = '' ) {
+
+		$domain = $this->get_domain( $input );
+
+		//force http so check will work
+		$domain = $this->maybe_add_http( $domain );
+		
+		//check if it's already there
+		if ( strpos( $domain, 'http://www.' ) !== FALSE )
+			return $domain;
+		
+		//add the www
+		$domain = str_ireplace('http://', 'http://www.', $domain);
+		
+		//if no domain arg was passed, update the class
+		if ( $input == '' )
+			$this->domain = $domain;
+		
+		return $domain;
 	}
 
 }
