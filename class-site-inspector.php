@@ -280,6 +280,7 @@
 		}
 		
 		$this->body = $data['body'];
+		$this->md5 = md5( $this->body );
 		$this->headers = $data['headers'];
 
 		if ( isset( $data['headers']['server'] ) ) {
