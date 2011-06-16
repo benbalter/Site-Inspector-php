@@ -20,7 +20,7 @@
 				),
 
 				'cdn' => array( 
-					'akamai' => 'akamai', 'akamai' => 'edgekey.net',
+					'Akamai' => 'akamai', 'Akamai (edgekey.net)' => 'edgekey.net', 'Akamai (akam.net)' => 'akam.net',
 				),
 
 				'cms' => array(
@@ -125,9 +125,9 @@
 		$dns = $this->get_dns_record( $domain );
 		
 		//check for for CNAME or A record on non-www
-		foreach ( $dns as $domain ) {
+		foreach ( $dns as $d ) {
 		
-			foreach ( $domain as $record ) {
+			foreach ( $d as $record ) {
 				 if ( isset( $record['type'] ) && ( $record['type'] == 'A' || $record['type'] == 'CNAME' ) )
 					 return true;
 			}
@@ -136,7 +136,7 @@
 		
 		//if there's no non-www, subsequent actions should be taken on www. instead of the TLD.
 		$this->domain = $this->maybe_add_www ( $domain );
-				
+		
 		return false;
 
 	}
@@ -151,9 +151,9 @@
 	function find_needles_in_haystack( $haystack, $key, $needle ) {	
 
 		$needles = $this->searches[$needle];
-			
+					
 		foreach ( $needles as $label => $n ) {
-	
+
 			if ( stripos( $haystack, $n ) !== FALSE ) {
 
 				$this->data[$needle] = $label;	
@@ -181,7 +181,6 @@
 		
 			foreach ($domain as $record) {
 				if ( isset($record['type']) && $record['type'] == 'AAAA') {
-				
 					return true;
 				}
 			}
@@ -323,10 +322,13 @@
 			
 		$data = wp_remote_get( $domain , $args);
 
-		//verify the domain exists
-		if ( is_wp_error( $data ) )
-			return false;
-			
+		//if there was an error, try to grab the headers to potentially follow a location header
+		if ( is_wp_error( $data ) ) {
+			$data = array( 'headers' => wp_remote_retrieve_headers( $domain ) );
+			if ( is_wp_error( $data ) )
+				return array();
+		}
+		
 		$data = $this->maybe_follow_location_header ( $data );
 
 		return $data;	
