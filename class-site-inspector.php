@@ -13,29 +13,32 @@
 	static $instance;
 	
 	//defaults to look for; can be overriden by user
-	public $oss = array( 
-					'apache', 'nginx'
-					);
+	public $searches = array( 
+	
+				'cloud' => array( 
+					'amazon'=>'amazon', 'rackspace' => 'rackspace'
+				),
 
-	public $cloud = array( 
-					'amazon',
-					);
+				'cdn' => array( 
+					'akamai' => 'akamai', 'akamai' => 'edgekey.net',
+				),
 
-	public $cdn = array( 
-					'akamai',
-					);
-
-	public $cms = array(
+				'cms' => array(
 					'joomla', 'wordpress', 'drupal', 'xoops', 'mediawiki', 'php-nuke', 'typepad', 'moveable type', 'bbpress', 'blogger', 'sharepoint', 'zencart', 'phpbb', 'tumblr', 'liferay',
-					);
+				),
 
-	public $analytics = array(	
+				'analytics' => array(	
 					'google-analytics', 'quantcast', 'disqus', 'GetSatisfaction', 'AdSense', 'AddThis',
-					);
+				),
 
-	public $scripts = array( 
+				'scripts' => array( 
 					'prototype', 'jquery', 'mootools', 'dojo', 'scriptaculous',
-					);
+				),
+	
+				'gapps' => array (
+					'Google Docs' => 'ghs.google.com', 'GMail' => 'aspmx.l.google.com', 'GMail' => 'googlemail.com'
+				),
+	);
 	
 	//user agent to identify as
 	public $ua = 'Site Inspector';
@@ -122,9 +125,13 @@
 		$dns = $this->get_dns_record( $domain );
 		
 		//check for for CNAME or A record on non-www
-		foreach ( $dns as $record ) {
-			 if ( isset( $record['type'] ) && ( $record['type'] == 'A' || $record['type'] == 'CNAME' ) )
-				 return true;
+		foreach ( $dns as $domain ) {
+		
+			foreach ( $domain as $record ) {
+				 if ( isset( $record['type'] ) && ( $record['type'] == 'A' || $record['type'] == 'CNAME' ) )
+					 return true;
+			}
+		
 		}
 		
 		//if there's no non-www, subsequent actions should be taken on www. instead of the TLD.
@@ -137,22 +144,28 @@
 	/**
 	 * Loops through an array of needles to see if any are in the haystack
 	 * @param array $needles array of needle strings
-	 * @param string $haystack the haystack
+	 * @param array $haystack the haystack
 	 * @returns string|bool needle if found, otherwise false
 	 * @since 0.1
 	 */
-	function find_needles_in_haystack( $needles, $haystack ) {
-		
-		foreach ( $needles as $needle ) {
+	function find_needles_in_haystack( $haystack, $key, $needle ) {	
 
-			if ( stripos( $haystack, $needle ) !== FALSE )
-				return $needle;
+		$needles = $this->searches[$needle];
 			
-		}
+		foreach ( $needles as $label => $n ) {
+	
+			if ( stripos( $haystack, $n ) !== FALSE ) {
 
+				$this->data[$needle] = $label;	
+				return;	
+			}			
+		}
+			
 		return false;
+		
 	}
 
+	
 	/**
 	 * Checks for an AAAA record on a domain
 	 * @since 0.1
@@ -164,10 +177,13 @@
 		if ( $dns == '' ) 
 			$dns = $this->get_dns_record();
 	
-		foreach ($dns as $record) {
-			if ( isset($record['type']) && $record['type'] == 'AAAA') {
-			
-				return true;
+		foreach ( $dns as $domain ) {
+		
+			foreach ($domain as $record) {
+				if ( isset($record['type']) && $record['type'] == 'AAAA') {
+				
+					return true;
+				}
 			}
 		}
 		
@@ -175,35 +191,6 @@
 
 	}
 	
-	/**
-	 * Checks DNS records for reference to google apps
-	 * @since 0.1
-	 * @param array $dns DNS returned from dns_get_record
-	 */
-	function check_gapps ( $dns = '', $additional = '') {
-		
-		if ( $dns == '' ) 
-			$dns = $this->get_dns_record();
-		
-		if ( $additional == '' ) {
-			$this->get_dns_record();
-			$additional = $this->data['dns']['addtl'];
-		}
-		
-		foreach ($dns as $k=> $record) {
-			
-			if ( isset($record['type']) && $record['type'] == 'MX') {
-
-				if ( stripos( $additional[$k]['host'], 'google') !== FALSE)		
-					return true;
-			}
-		
-		}
-		
-		return false;
-		
-	}
-
 	/**
 	 * Helper function to allow domain arguments to be optional
 	 *
@@ -231,17 +218,13 @@
 	 * @since 0.1
 	 */
 	function get_dns_record( $domain  = '' ) {
-	
+
 		$domain =  $this->remove_http( $this->get_domain( $domain ) );
 		
-		if ( !isset ( $this->data['dns'] ) )
-			$this->data['dns'] = dns_get_record( 	$domain, 
-													DNS_ALL, 
-													$this->data['dns']['ns'], 
-													$this->data['dns']['addtl']
-												);
-		
-		return $this->data['dns'];
+		if ( !isset( $this->data['dns'][ $domain ] ) )
+			$this->data['dns'][ $domain ] = dns_get_record( $domain, DNS_ALL );
+
+		return $this->dns[ $domain ];
 	
 	}
 	
@@ -270,31 +253,21 @@
 		//cleanup domain
 		$this->maybe_add_http( );
 		$this->remove_www( );
-		$this->domain = strtolower( $this->domain);
+		$this->domain = strtolower( $this->domain );
 
 		//check nonwww
 		$this->nonwww = $this->check_nonwww( );
 		
 		//get DNS
-		$dns = $this->get_dns_record( $domain );
+		$this->get_dns_record( $this->domain );
 		
 		//IPv6
-		$this->ipv6 = $this->check_ipv6( $dns );
+		$this->ipv6 = $this->check_ipv6( $this->dns );
 		
 		//IP & Host
-		$ip =  gethostbynamel( $domain );
-		$this->ip = $ip[0];
-		@ $this->host = gethostbyaddr( $this->data['ip'] );
-		
-		//check CDN
-		$this->cdn = $this->find_needles_in_haystack( $this->cdn,  $this->host );
-		
-		//check cloud
-		if ( $this->cdn == false )
-			$this->cloud = $this->find_needles_in_haystack( $this->cloud, $this->host );
-		
-		//check google apps 
-		$this->data['gapps'] = $this->check_gapps ( $this->dns, $this->data['dns']['addtl'] );
+		$this->ip = gethostbyname( $this->domain );
+		foreach ( gethostbynamel( $this->remove_http( $this->domain ) ) as $ip ) 
+			$this->data['hosts'][$ip] = gethostbyaddr( $ip );
 		
 		//grab the page
 		$data = $this->remote_get( $this->domain );
@@ -303,20 +276,29 @@
 		if ( !$data ) {
 			$this->status = 'unreachable';
 			return false;
+		} else {
+			$this->status = 'live';
 		}
-					
-		$this->status = 'live';
 		
 		$this->body = $data['body'];
 		$this->headers = $data['headers'];
-				
-			if ( isset( $data['headers']['server'] ) ) {
-				$this->server_software = $data['headers']['server'];
-			} 
+
+		if ( isset( $data['headers']['server'] ) ) {
+			$this->server_software = $data['headers']['server'];
+		} 
 		
-			$this->cms = $this->check_apps( $body, $this->cms );
-			$this->analytics = $this->check_apps( $body, $this->analytics );
-			$this->scripts = $this->check_apps( $body, $this->scripts );
+		//check CDN
+		array_walk_recursive( $this->dns, array( &$this, 'find_needles_in_haystack'), 'cdn');
+				
+		//check cloud
+		array_walk_recursive( $this->dns, array( &$this, 'find_needles_in_haystack'), 'cloud');
+		
+		//check google apps 
+		array_walk_recursive( $this->dns, array( &$this, 'find_needles_in_haystack'), 'gapps');
+		
+		$this->cms = $this->check_apps( $body, $this->cms );
+		$this->analytics = $this->check_apps( $body, $this->analytics );
+		$this->scripts = $this->check_apps( $body, $this->scripts );
 				
 		asort( $this->data );
 		
@@ -334,38 +316,20 @@
 	function remote_get( $domain = '' ) {
 		
 		$domain = $this->get_domain( $domain );
-				
-		//prefer WP's HTTP API
-		if ( function_exists( 'wp_remote_get') ) {
+		
+		$this->get_dns_record( $this->remove_trailing_slash( $domain ) );
+						
+		$args = array( 'redirection' => 0, 'user-agent' => $this->ua );
 			
-			$data = wp_remote_get( $domain , array('user-agent' => $this->ua ) );
+		$data = wp_remote_get( $domain , $args);
 
-			//verify the domain exists
-			if ( is_wp_error( $data ) )
-				return false;
-		
-			$data = $this->maybe_follow_location_header ( $data );
-
-			return $data;
-		
-		}
-		
-		//non WP fallback
-		
-		//grab body
-		$data['body'] = file_get_contents( (string) $this->domain );
-		
-		//if fopen failed for some reason, kick
-		if ( $data['body'] == false )
+		//verify the domain exists
+		if ( is_wp_error( $data ) )
 			return false;
-	
-		//grab the headers
-		$data['headers'] = get_headers ( $this->domain, 1 );
-		
+			
 		$data = $this->maybe_follow_location_header ( $data );
-		
-		return $data;
-	
+
+		return $data;	
 	}
 	
 	function maybe_follow_location_header ( $data ) {
@@ -375,22 +339,14 @@
 			return $data;
 
 		//if there's a location header, follow
-		if ( !isset ( $data['headers']['Location'] ) ) 
+		if ( !isset ( $data['headers']['location'] ) ) 
 			return $data;
 		
-		//if this is not the first redirect, check to see if we're in a loop
-		if ( is_array( $this->data['redirect'] ) ) {
-			$last = array_pop ( $this->data['redirect'] );
-			
-			if ( $data['headers']['Location'] == $last['destination'] )
-				return $data;
-		}
-		
 		//store the redirect 
-		$this->data['redirect'][] = array( 'code' => $data['headers'][0], 'destination' => $data['headers']['Location'] );
+		$this->data['redirect'][] = array( 'code' => wp_remote_retrieve_response_code( $data ), 'destination' => $data['headers']['location'] );
 		
-		if ( sizeof( $this->data['redirect'] ) > $this->follow )
-			$data = $this->remote_get( $data['headers']['Location'] );
+		if ( sizeof( $this->data['redirect'] ) < $this->follow )
+			$data = $this->remote_get( $data['headers']['location'] );
 	
 		return $data;
 	}
@@ -479,6 +435,15 @@
 			$this->domain = $domain;
 		
 		return $domain;
+	}
+	
+	function remove_trailing_slash( $domain ) {
+		
+		if ( substr( $domain, -1, 1) == '/' )
+			return substr( $domain, 0, -1);
+			
+		return $domain;
+			
 	}
 
 }

@@ -1,6 +1,10 @@
 <?php
+include('../../wp-load.php' );
 include('class-site-inspector.php'); 
 $inspector = new SiteInspector;
+
+if ( isset( $_GET['follow'] ) )
+	$inspector->follow = $_GET['follow'];
 
 if ( isset ( $_GET['domain'] ) )
 	$data = $inspector->inspect ( $_GET['domain'] );
@@ -10,13 +14,35 @@ if ( isset ( $_GET['format'] ) && $_GET['format'] == 'json' ) {
 	exit(); 
 }
 
-//debugging 
-/*
-echo "<PRE>";
-unset ( $data['body'] );
-print_r ( $data );
-die();
-*/
+function format_records($records) { ?>
+		<table>
+			<tr>
+				<th>Host</th>
+				<th>Class</th>
+				<th>Type</th>
+				<th>TTL</th>
+				<th>Additional Info</th>
+			</tr>
+		<?php
+		foreach ($records as $record) { ?>
+			<tr>
+				<td><?php echo $record['host']; ?></td>
+				<td><?php echo $record['class']; ?></td>
+				<td><?php echo $record['type']; ?></td>
+				<td><?php echo $record['ttl']; ?></td>
+				<td>
+				<?php 
+					unset($record['host'], $record['class'], $record['type'], $record['ttl']);
+					foreach ($record as $field=>$value) {
+						echo "<strong>$field:</strong> $value<br />";	
+					}
+				?>
+				</td>
+			</tr>
+		<?php } ?>
+		</table>
+	<?php } 
+	
 ?>
 <!doctype html>
 <html lang="en" class="no-js">
@@ -47,17 +73,16 @@ die();
 		
 		
 	<h2>Basic Information</h2>	
-		
 		<ul>
 			<li><div class="label">Status:</div> <?php echo $inspector->status; ?></li>
 			<li><div class="label">IPv6 Support:</div> <?php echo ( $inspector->ipv6 ) ? 'Yes' : 'No'; ?></li>
 			<li><div class="label">Non-WWW Support:</div>  <?php echo ( $inspector->nonwww ) ? 'Yes' : 'No'; ?></li>
-			<li><div class="label">CDN:</div> <?php echo ( $inspector->cdn ) ? 'Yes' : 'No'; ?></li>
-			<li><div class="label">Cloud:</div> <?php echo ( $inspector->cloud ) ? 'Yes' : 'No'; ?></li>
+			<li><div class="label">CDN:</div> <?php echo $inspector->cdn; ?></li>
+			<li><div class="label">Cloud:</div> <?php echo $inspector->cloud; ?></li>
 		</ul>
 	<h2>Software</h2>
 		<ul>
-			<li><div class="label">Google Apps:</div> <?php echo ( $inspector->gapps ) ? 'Yes' : 'No'; ?></li>
+			<li><div class="label">Google Apps:</div> <?php echo $inspector->gapps; ?></li>
 			<li><div class="label">Server Software:</div> <?php echo $data['server_software']; ?></li>
 			<li><div class="label">CMS:</div> <?php echo $inspector->cms; ?></li>
 		</ul>
@@ -76,34 +101,24 @@ die();
 	</ul>
 	<?php } ?>
 	<h2>DNS Record</h2>
-	
-	<h3>Basic Record</h3>
-	<?php //$records = dns_get_record($_GET['domain'],DNS_ANY, $authns, $addtl); format_records($records); ?>
-
-	
-	<h3>Name Servers</h3>
-	<?php //format_records($authns); ?>
-	<h3>Additional Records</h3>
-	<?php //format_records($addtl); ?>
-	<?php 	
-	$hosts = gethostbynamel($_GET['domain']);
-	if ($hosts) { ?>
-		<h2>Reverse Lookup</h2>
+	<?php foreach ( $inspector->dns as $domain => $records ) { ?>
+		<h3><?php echo $domain; ?></h3>
+		<?php format_records( $records ); ?>
+	<?php } ?>
+	<h2>Reverse Lookup</h2>
 		<table>
 			<tr>
 				<th>IP</th>
 				<th>Hostname</th>
 			</tr>
 		<?php 
-		
-		foreach ($hosts as $host) { ?>
+		foreach ($inspector->hosts as $ip=>$host) { ?>
 			<tr>
-				<td><a href="http://www.bing.com/search?q=ip%3A<?php echo trim($host); ?>"><?php echo $host; ?></a></td>
-				<td><?php echo gethostbyaddr($host); ?></td>
+				<td><a href="http://www.bing.com/search?q=ip%3A<?php echo trim( $ip ); ?>"><?php echo $ip; ?></a></td>
+				<td><?php echo $host; ?></td>
 			</tr>
 		<?php } ?>
 		</table>
-	<?php } ?>
 <?php } else { ?>
 	<h1>Site Inspector</h1>
 </header>
