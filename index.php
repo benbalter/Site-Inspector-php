@@ -10,6 +10,7 @@ if ( isset ( $_GET['domain'] ) )
 	$data = $inspector->inspect ( $_GET['domain'] );
 	
 if ( isset ( $_GET['format'] ) && $_GET['format'] == 'json' ) {
+	header('Content-type: application/json');
 	echo json_encode( $data );
 	exit(); 
 }
@@ -66,7 +67,7 @@ function format_records($records) { ?>
 			<?php if ( !empty($_GET['domain'] ) ) { ?>
 
 			<h1>Details for <?php echo $inspector->domain; ?> </h1>
-
+			Other Formats: <a href="<?php echo add_query_arg('format', 'json'); ?>">json</a>
 
 						
 		</header>

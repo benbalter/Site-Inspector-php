@@ -20,7 +20,7 @@
 				),
 
 				'cdn' => array( 
-					'Akamai' => 'akamai', 'Akamai (edgekey.net)' => 'edgekey.net', 'Akamai (akam.net)' => 'akam.net',
+					'Akamai' => 'akamai', 'Akamai (edgekey.net)' => 'edgekey.net', 'Akamai (akam.net)' => 'akam.net', 'Akamai (akadns.net)' => 'akadns.net',
 				),
 
 				'cms' => array(
@@ -262,7 +262,7 @@
 		$this->get_dns_record( $this->domain );
 		
 		//IP & Host
-		$this->ip = gethostbyname( $this->domain );
+		$this->ip = gethostbyname( $this->remove_http( $this->domain ) );
 		foreach ( gethostbynamel( $this->remove_http( $this->domain ) ) as $ip ) 
 			$this->data['hosts'][$ip] = gethostbyaddr( $ip );
 		
@@ -331,7 +331,7 @@
 		if ( is_wp_error( $data ) ) {
 			$data = array( 'headers' => wp_remote_retrieve_headers( $domain ) );
 			if ( is_wp_error( $data ) )
-				return array();
+				return false;
 		}
 		
 		$data = $this->maybe_follow_location_header ( $data );
