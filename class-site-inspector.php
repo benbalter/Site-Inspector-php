@@ -250,9 +250,10 @@
 			
 		
 		//cleanup domain
+		$this->domain = strtolower( $this->domain );
+		$this->domain = trim( $this->domain );
 		$this->maybe_add_http( );
 		$this->remove_www( );
-		$this->domain = strtolower( $this->domain );
 
 		//check nonwww
 		$this->nonwww = $this->check_nonwww( );
@@ -284,17 +285,20 @@
 			$this->server_software = $data['headers']['server'];
 		} 
 		
+		//merge DNS and hosts from reverse DNS lookup
+		$haystack = array_merge( $this->dns, $this->hosts );
+		
 		//IPv6
 		$this->ipv6 = $this->check_ipv6( $this->dns );
 		
 		//check CDN
-		array_walk_recursive( $this->dns, array( &$this, 'find_needles_in_haystack'), 'cdn');
+		array_walk_recursive( $haystack, array( &$this, 'find_needles_in_haystack'), 'cdn');
 				
 		//check cloud
-		array_walk_recursive( $this->dns, array( &$this, 'find_needles_in_haystack'), 'cloud');
+		array_walk_recursive( $haystack, array( &$this, 'find_needles_in_haystack'), 'cloud');
 		
 		//check google apps 
-		array_walk_recursive( $this->dns, array( &$this, 'find_needles_in_haystack'), 'gapps');
+		array_walk_recursive( $haystack, array( &$this, 'find_needles_in_haystack'), 'gapps');
 		
 		$this->cms = $this->check_apps( $body, $this->cms );
 		$this->analytics = $this->check_apps( $body, $this->analytics );

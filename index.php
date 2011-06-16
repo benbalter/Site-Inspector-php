@@ -81,12 +81,15 @@ function format_records($records) { ?>
 			<li><div class="label">Non-WWW Support:</div>  <?php echo ( $inspector->nonwww ) ? 'Yes' : 'No'; ?></li>
 			<li><div class="label">CDN:</div> <?php echo $inspector->cdn; ?></li>
 			<li><div class="label">Cloud:</div> <?php echo $inspector->cloud; ?></li>
+			<li><div class="label">Https:</div> </li>
 		</ul>
 	<h2>Software</h2>
 		<ul>
 			<li><div class="label">Google Apps:</div> <?php echo $inspector->gapps; ?></li>
 			<li><div class="label">Server Software:</div> <?php echo $data['server_software']; ?></li>
-			<li><div class="label">CMS:</div> <?php echo $inspector->cms; ?></li>
+			<li><div class="label">CMS:</div> </li>
+			<li><div class="label">Analytics:</div> </li>
+			<li><div class="label">JavaScript Libraries:</div> </li>
 		</ul>
 	<h2>Headers</h2>
 		<ul>
