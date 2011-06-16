@@ -260,9 +260,6 @@
 		//get DNS
 		$this->get_dns_record( $this->domain );
 		
-		//IPv6
-		$this->ipv6 = $this->check_ipv6( $this->dns );
-		
 		//IP & Host
 		$this->ip = gethostbyname( $this->domain );
 		foreach ( gethostbynamel( $this->remove_http( $this->domain ) ) as $ip ) 
@@ -286,6 +283,9 @@
 		if ( isset( $data['headers']['server'] ) ) {
 			$this->server_software = $data['headers']['server'];
 		} 
+		
+		//IPv6
+		$this->ipv6 = $this->check_ipv6( $this->dns );
 		
 		//check CDN
 		array_walk_recursive( $this->dns, array( &$this, 'find_needles_in_haystack'), 'cdn');
