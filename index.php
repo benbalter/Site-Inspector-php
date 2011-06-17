@@ -67,7 +67,7 @@ function format_records($records) { ?>
 			<?php if ( !empty($_GET['domain'] ) ) { ?>
 
 			<h1>Details for <?php echo $inspector->domain; ?> </h1>
-			Other Formats: <a href="<?php echo add_query_arg('format', 'json'); ?>">json</a>
+			Other Formats: <a href="<?php echo add_query_arg('format', 'json'); ?>">json</a>, <a href="https://github.com/benbalter/Site-Inspector">source</a>
 
 						
 		</header>
@@ -88,9 +88,9 @@ function format_records($records) { ?>
 		<ul>
 			<li><div class="label">Google Apps:</div> <?php echo $inspector->gapps; ?></li>
 			<li><div class="label">Server Software:</div> <?php echo $data['server_software']; ?></li>
-			<li><div class="label">CMS:</div> </li>
-			<li><div class="label">Analytics:</div> </li>
-			<li><div class="label">JavaScript Libraries:</div> </li>
+			<li><div class="label">CMS:</div> <?php echo implode(', ', $inspector->cms); ?></li>
+			<li><div class="label">Analytics:</div> <?php echo implode(', ', $inspector->analytics); ?> </li>
+			<li><div class="label">JavaScript Libraries:</div> <?php echo implode(', ', $inspector->scripts); ?></li>
 		</ul>
 	<h2>Headers</h2>
 		<ul>
