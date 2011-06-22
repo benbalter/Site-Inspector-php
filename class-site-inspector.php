@@ -15,56 +15,63 @@
 	public $cachelife = 3600;
 	
 	//defaults to look for; can be overriden by user
+	//format [search] => [label]
 	public $searches = array( 
 	
 				'cloud' => array( 
-					'amazon'=>'amazon', 'rackspace' => 'rackspace'
+					'amazon'=>'Amazon', 
+					'rackspace' => 'Rackspace'
 				),
 
 				'cdn' => array( 
-					'Akamai' => 'akamai', 'Akamai (edgekey.net)' => 'edgekey.net', 'Akamai (akam.net)' => 'akam.net', 'Akamai (akadns.net)' => 'akadns.net',
+					'Akamai' => 'akamai', 
+					'edgekey.net' => 'Akamai', 
+					'akam.net' => 'Akamai', 
+					'akadns.net' => 'Akamai',
 				),
 
 				'cms' => array(
-					'Joomla' => 'joomla', 
-					'WordPress' => 'wordpress', 
-					'WordPress (wp-content)' => 'wp-content',
-					'Drupal' => 'drupal', 
-					'Xoops' => 'xoops', 
-					'MediaWiki' => 'mediawiki', 
-					'PHP-Nuke' => 'php-nuke', 
-					'TypePad' => 'typepad', 
-					'Moveable Type' => 'moveable type', 
-					'BBPress' => 'bbpress', 
-					'Blogger' => 'blogger', 
-					'SharePoint' => 'sharepoint', 
-					'ZenCart' => 'zencart', 
-					'phpBB' => 'phpbb', 
+					'joomla' => 'Joomla', 
+					'wordpress' => 'WordPress', 
+					'wp-content' => 'WordPress',
+					'drupal' => 'Drupal', 
+					'xoops' => 'Xoops', 
+					'mediawiki' => 'MediaWiki', 
+					'php-nuke' => 'PHP-Nuke', 
+					'typepad' => 'Typepad', 
+					'moveable type' => 'Moveable Type', 
+					'bbpress' => 'BBPress', 
+					'blogger' => 'Blogger', 
+					'sharepoint' => 'Sharepoint', 
+					'zencart' => 'Zencart', 
+					'phpbb' => 'PhpBB', 
 					'tumblr' => 'tumblr', 
-					'Liferay' => 'liferay',
+					'liferay' => 'Liferay',
 				),
 
 				'analytics' => array(	
-					'Google Analytics' => 'google-analytics', 
-					'Google Analytics (ga.js)' => 'ga.js', 
-					'Google Analytics (ua-)' => 'ua-',
-					'Quantcast' => 'quantcast', 
-					'Disqus' => 'disqus', 
-					'Get Satisfaction' => 'GetSatisfaction', 
+					'google-analytics' => 'Google Analytics', 
+					'ga.js' => 'Google Analytics', 
+					'ua-' => 'Google Analytics',
+					'quantcast' => 'Quantcast', 
+					'disqus' => 'Disqus', 
+					'GetSatisfaction' => 'GetSatisfaction', 
 					'AdSense' => 'AdSense', 
 					'AddThis' => 'AddThis',
 				),
 
 				'scripts' => array( 
-					'Prototype' => 'prototype', 
-					'jQuery' => 'jquery', 
-					'Mootools' => 'mootools', 
-					'Dojo' => 'dojo', 
-					'Scriptalicious' => 'scriptaculous',
+					'prototype' => 'Prototype', 
+					'jquery' => 'jQuery', 
+					'mootools' => 'Mootools', 
+					'dojo' => 'Dojo', 
+					'scriptalicious' => 'Scriptaculous',
 				),
 	
 				'gapps' => array (
-					'Google Docs' => 'ghs.google.com', 'GMail' => 'aspmx.l.google.com', 'GMail' => 'googlemail.com'
+					'ghs.google.com' => 'Google Docs', 
+					'aspmx.l.google.com' => 'GMail', 
+					'googlemail.com' => 'GMail'
 				),
 	);
 	
@@ -116,11 +123,9 @@
 
 	function check_apps( $body, $apps ) {
 		//TO DO
-		
+				
 		/**
 		 * Should Check inside script tags
-		 * Should check external scripts
-		 * Should check SRC Paths of all tags on page (within same domain)
 		 */
 		$output = array();
 
@@ -134,7 +139,8 @@
 		}
 		
 		
-		foreach ( $apps as $app=>$search ) {
+		foreach ( $apps as $search=>$app ) {
+			
 			if ( preg_match_all( '/<[^>]+' . $search. '[^>]+>/i', $body, $matches) != 0 )
 				$output[] = $app;
 		
@@ -142,7 +148,7 @@
 		if ( preg_match_all( "/<script((?:(?!src=).)*?)>(.*?)$search(.*?)<\/script>/smix", $body, $matches) != 0 )
 				$output[] = $app;
 		}
-	
+		
 
 		//should fix this
 		return array_unique( $output );
