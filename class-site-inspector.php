@@ -35,6 +35,8 @@
 					'wordpress' => 'WordPress', 
 					'wp-content' => 'WordPress',
 					'drupal' => 'Drupal', 
+					'sites\/default\/' => 'Drupal',
+					'sites\/all\/' => 'Drupal',
 					'xoops' => 'Xoops', 
 					'mediawiki' => 'MediaWiki', 
 					'php-nuke' => 'PHP-Nuke', 
@@ -120,38 +122,65 @@
             E_USER_NOTICE);
         return null;			
 	}
+	
+	function check_https( $domain = '' ) {
 
-	function check_apps( $body, $apps ) {
+		$domain = $this->get_domain( $domain );
+		$domain = 'https://' . $this->remove_http( $domain );
+			
+		$args = array( 'user-agent' => $this->ua, 'sslverify' => false );
+		$get = $this->maybe_remote_get( $domain, $args);
+		
+		if ( is_wp_error( $get ) )
+			return false;
+			
+		return true;
+
+	}
+
+	function check_apps( $body, $apps, $script = false ) {
 		//TO DO
 				
 		/**
 		 * Should Check inside script tags
 		 */
 		$output = array();
+		
+		//this is a javascript file, just check the whole thing
+		if ( $script )  {
+			foreach ( $apps as $search=>$app ) {
+				if ( preg_match_all( '/$search/i', $body, $matches) != 0 )
+					$output[] = $app;
+			}
+			return $output;
+		}
 
-		 
+		
+		//grab external scripts
 		preg_match_all( '/<script[^>]* src=(\"|\')([^>]*)(\"|\')[^>]*>/i', $body, $matches);
+
 		foreach ( $matches[2] as $url ) {
 				$args = array( 'user-agent' => $this->ua );
 				$data = wp_remote_retrieve_body( $this->maybe_remote_get( $this->url_to_absolute( $this->domain, $url ), $args) );
 				if ( $data ) 
-					$output = array_merge( $output, $this->check_apps( $data, $apps  ) );
+					$output = array_merge( $output, $this->check_apps( $data, $apps, true ) );
 		}
 		
-		
+		//loop and regex
 		foreach ( $apps as $search=>$app ) {
+		
 			
 			if ( preg_match_all( '/<[^>]+' . $search. '[^>]+>/i', $body, $matches) != 0 )
 				$output[] = $app;
 		
-		//do this better
-		if ( preg_match_all( "/<script((?:(?!src=).)*?)>(.*?)$search(.*?)<\/script>/smix", $body, $matches) != 0 )
+			//do this better
+			if ( preg_match_all( "/<script((?:(?!src=).)*?)>(.*?)$search(.*?)<\/script>/smix", $body, $matches) != 0 )
 				$output[] = $app;
-		}
+			}
 		
 
-		//should fix this
-		return array_unique( $output );
+			//should fix this
+			return array_unique( $output );
 
 
 	}
@@ -304,6 +333,7 @@
 
 		//check nonwww
 		$this->nonwww = $this->check_nonwww( );
+		$this->https = $this->check_https( );
 		
 		//get DNS
 		$this->get_dns_record( $this->domain );

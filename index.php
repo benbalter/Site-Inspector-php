@@ -82,7 +82,7 @@ function format_records($records) { ?>
 			<li><div class="label">Non-WWW Support:</div>  <?php echo ( $inspector->nonwww ) ? 'Yes' : 'No'; ?></li>
 			<li><div class="label">CDN:</div> <?php echo $inspector->cdn; ?></li>
 			<li><div class="label">Cloud:</div> <?php echo $inspector->cloud; ?></li>
-			<li><div class="label">Https:</div> </li>
+			<li><div class="label">Https:</div> <?php echo ( $inspector->https ) ? 'Yes' : 'No'; ?></li>
 		</ul>
 	<h2>Software</h2>
 		<ul>
