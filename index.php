@@ -15,8 +15,6 @@ if ( isset ( $_GET['format'] ) && $_GET['format'] == 'json' ) {
 	exit(); 
 }
 
-//print_r( $inspector->data );
-
 function format_records($records) { ?>
 		<table>
 			<tr>

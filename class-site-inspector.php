@@ -169,16 +169,21 @@
 		//loop and regex
 		foreach ( $apps as $search=>$app ) {
 		
-			
-			if ( preg_match_all( '/<[^>]+' . $search. '[^>]+>/i', $body, $matches) != 0 )
+			//look inside link attributes to find CSS files with app names in path
+			if ( preg_match_all( '/<link[^>]+' . $search. '[^>]+>/i', $body, $matches) != 0 )
 				$output[] = $app;
-		
-			//do this better
-			if ( preg_match_all( "/<script((?:(?!src=).)*?)>(.*?)$search(.*?)<\/script>/smix", $body, $matches) != 0 )
-				$output[] = $app;
-			}
-		
 
+			//Look inside script tags
+			$found_tags = preg_match_all( "#<script[\s\S]*?>[\s\S]*?</script>#si", $body, $matches);
+			if (  $found_tags ) {
+				foreach( $matches[0] as $match) {
+					if ( preg_match ( '/$search/ism', $body) )
+						$output[] = $app;
+				}				
+			}		
+		
+		}
+		
 			//should fix this
 			return array_unique( $output );
 
