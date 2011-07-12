@@ -230,10 +230,14 @@
 	 * @since 0.1
 	 */
 	function find_needles_in_haystack( $haystack, $key, $needle ) {	
-
+		
 		$needles = $this->searches[$needle];
 					
-		foreach ( $needles as $label => $n ) {
+	//	echo "HAYSTACK: $haystack, NEEDLES: ";
+		//print_r( $needles );
+		//echo "\n";
+					
+		foreach ( $needles as $n => $label ) {
 
 			if ( stripos( $haystack, $n ) !== FALSE ) {
 
@@ -369,7 +373,7 @@
 		
 		//merge DNS and hosts from reverse DNS lookup
 		$haystack = array_merge( $this->dns, $this->hosts );
-		
+
 		//IPv6
 		$this->ipv6 = $this->check_ipv6( $this->dns );
 		
