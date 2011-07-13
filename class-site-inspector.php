@@ -64,10 +64,10 @@
 				),
 
 				'scripts' => array( 
-					'prototype' => 'Prototype', 
+					'__proto__' => 'Prototype', 
 					'jquery' => 'jQuery', 
 					'mootools' => 'Mootools', 
-					'dojo' => 'Dojo', 
+					'dojo\.' => 'Dojo', 
 					'scriptalicious' => 'Scriptaculous',
 				),
 	
@@ -152,7 +152,8 @@
 
 		foreach ( $apps as $search=>$app ) {
 
-			if ( preg_match_all( "/$search/i", $body, $matches) != 0 )		
+			if ( preg_match_all( "/$search/i", $body, $matches) != 0 )
+				//echo $body;
 				$output[] = $app;
 			}
 			return $output;
