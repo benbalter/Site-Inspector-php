@@ -1,6 +1,6 @@
 <?php
-include('../../wp-load.php' );
-include('class-site-inspector.php'); 
+include('../../../../wp-load.php' );
+//include('class-site-inspector.php'); 
 $inspector = new SiteInspector;
 
 if ( isset( $_GET['follow'] ) )
@@ -50,7 +50,7 @@ function format_records($records) { ?>
 <head>
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-	<title>Site Inspector<?php if ( !empty($_GET['domain'] ) ) { ?> | Details for <?php echo $inspector->domain; ?><? } ?></title>
+	<title>Site Inspector<?php if ( !empty($_GET['domain'] ) ) { ?> | Details for <?php echo $inspector->domain; ?><?php } ?></title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="css/style.css?v=2">
 </head>
