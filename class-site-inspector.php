@@ -55,6 +55,7 @@
 					'google-analytics' => 'Google Analytics', 
 					'ga.js' => 'Google Analytics', 
 					'ua-' => 'Google Analytics',
+					'_gaq' => 'Google Analytics',
 					'quantcast' => 'Quantcast', 
 					'disqus' => 'Disqus', 
 					'GetSatisfaction' => 'GetSatisfaction', 
@@ -148,9 +149,11 @@
 		
 		//this is a javascript file, just check the whole thing
 		if ( $script )  {
-			foreach ( $apps as $search=>$app ) {
-				if ( preg_match_all( '/$search/i', $body, $matches) != 0 )
-					$output[] = $app;
+
+		foreach ( $apps as $search=>$app ) {
+
+			if ( preg_match_all( "/$search/i", $body, $matches) != 0 )		
+				$output[] = $app;
 			}
 			return $output;
 		}
@@ -168,7 +171,7 @@
 		
 		//loop and regex
 		foreach ( $apps as $search=>$app ) {
-		
+				
 			//look inside link attributes to find CSS files with app names in path
 			if ( preg_match_all( '/<link[^>]+' . $search. '[^>]+>/i', $body, $matches) != 0 )
 				$output[] = $app;
