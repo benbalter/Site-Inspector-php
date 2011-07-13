@@ -306,7 +306,7 @@
 		$domain =  $this->remove_http( $this->get_domain( $domain ) );
 		
 		if ( !isset( $this->data['dns'][ $domain ] ) )
-			$this->data['dns'][ $domain ] = dns_get_record( $domain, DNS_ALL );
+			$this->data['dns'][ $domain ] = dns_get_record( $domain, DNS_ALL - DNS_PTR );
 
 		return $this->dns[ $domain ];
 	
@@ -373,7 +373,7 @@
 		
 		//merge DNS and hosts from reverse DNS lookup
 		$haystack = array_merge( $this->dns, $this->hosts );
-
+		
 		//IPv6
 		$this->ipv6 = $this->check_ipv6( $this->dns );
 		
