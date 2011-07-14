@@ -41,7 +41,7 @@
 					'mediawiki' => 'MediaWiki', 
 					'php-nuke' => 'PHP-Nuke', 
 					'typepad' => 'Typepad', 
-					'moveable type' => 'Moveable Type', 
+					'Movable Type' => 'Moveable Type', 
 					'bbpress' => 'BBPress', 
 					'blogger' => 'Blogger', 
 					'sharepoint' => 'Sharepoint', 
@@ -54,7 +54,7 @@
 				'analytics' => array(	
 					'google-analytics' => 'Google Analytics', 
 					'ga.js' => 'Google Analytics', 
-					'ua-' => 'Google Analytics',
+					'ua-[0-9]{8}-[0-9]' => 'Google Analytics',
 					'_gaq' => 'Google Analytics',
 					'quantcast' => 'Quantcast', 
 					'disqus' => 'Disqus', 
@@ -153,7 +153,6 @@
 		foreach ( $apps as $search=>$app ) {
 
 			if ( preg_match_all( "/$search/i", $body, $matches) != 0 )
-				//echo $body;
 				$output[] = $app;
 			}
 			return $output;
@@ -164,6 +163,11 @@
 		preg_match_all( '/<script[^>]* src=(\"|\')([^>]*)(\"|\')[^>]*>/i', $body, $matches);
 
 		foreach ( $matches[2] as $url ) {
+				
+				//exclude addthis because it will trip every CMS search
+				if ( stripos( $url, 'addthis.com' ) !== false )
+					continue;
+		
 				$args = array( 'user-agent' => $this->ua );
 				$data = wp_remote_retrieve_body( $this->maybe_remote_get( $this->url_to_absolute( $this->domain, $url ), $args) );
 				if ( $data ) 
@@ -173,10 +177,10 @@
 		//loop and regex
 		foreach ( $apps as $search=>$app ) {
 				
-			//look inside link attributes to find CSS files with app names in path
-			if ( preg_match_all( '/<link[^>]+' . $search. '[^>]+>/i', $body, $matches) != 0 )
+			//look inside link and meta attributes to find app names
+			if ( preg_match_all( '/<(link|meta)[^>]+' . $search . '[^>]+>/i', $body, $matches) != 0 )
 				$output[] = $app;
-
+				
 			//Look inside script tags
 			$found_tags = preg_match_all( "#<script[\s\S]*?>[\s\S]*?</script>#si", $body, $matches);
 			if (  $found_tags ) {
@@ -336,7 +340,6 @@
 		//if we don't have a domain, kick
 		if ( $this->domain == '') 
 			return false;
-			
 		
 		//cleanup domain
 		$this->domain = strtolower( $this->domain );
@@ -585,7 +588,7 @@
     {
         if ( !empty( $r['path'] ) )
             $r['path'] = $this->url_remove_dot_segments( $r['path'] );
-        return join_url( $r );
+        return $this->join_url( $r );
     }
     unset( $r['port'] );
     unset( $r['user'] );

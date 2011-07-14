@@ -72,7 +72,6 @@ function format_records($records) { ?>
 
 		<div id="main" role="main">
 		
-		
 	<h2>Basic Information</h2>	
 		<ul>
 			<li><div class="label">Status:</div> <?php echo $inspector->status; ?></li>
