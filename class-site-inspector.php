@@ -356,16 +356,26 @@
 		
 		//IP & Host
 		$this->ip = gethostbyname( $this->remove_http( $this->domain ) );
-		foreach ( gethostbynamel( $this->remove_http( $this->domain ) ) as $ip ) 
+		$live = false;
+		foreach ( gethostbynamel( $this->remove_http( $this->domain ) ) as $ip ) {
+			
+			//some sites (e.g., privacy.gov) returns localhost as their IP, this prevents scanning self
+			if ( $ip != '127.0.0.1' )
+				$live = true;
 			$this->data['hosts'][$ip] = gethostbyaddr( $ip );
-		
+			
+		}
+
 		//grab the page
-		$data = $this->remote_get( $this->domain );
+		if ( $live )
+			$data = $this->remote_get( $this->domain );
 
 		//if there was an error, kick
-		if ( !$data ) {
+		if ( !$live || !$data ) {
 			$this->status = 'unreachable';
-			return false;
+			return $this->data;
+		} else if ( wp_remote_retrieve_response_code( $data ) > 400 ) {
+			$this->status = wp_remote_retrieve_response_code( $data );
 		} else {
 			$this->status = 'live';
 		}
@@ -419,9 +429,13 @@
 		$args = array( 'redirection' => 0, 'user-agent' => $this->ua );
 			
 		$data = $this->maybe_remote_get( $domain, $args );
-			
+		
 		//if there was an error, try to grab the headers to potentially follow a location header
 		if ( is_wp_error( $data ) ) {
+		
+			if ( $data->get_error_message() == 'connect() timed out!' ) 
+				return false;
+		
 			$data = array( 'headers' => wp_remote_retrieve_headers( $domain ) );
 			if ( is_wp_error( $data ) )
 				return false;
