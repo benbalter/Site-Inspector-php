@@ -1,6 +1,9 @@
 <?php
 include('../../../../wp-load.php' );
-//include('class-site-inspector.php'); 
+
+if ( !class_exists('SiteInspector') )
+	include('class-site-inspector.php'); 
+
 $inspector = new SiteInspector;
 
 if ( isset( $_GET['follow'] ) )
