@@ -7,7 +7,7 @@ if ( isset( $_GET['follow'] ) )
 	$inspector->follow = $_GET['follow'];
 
 if ( isset ( $_GET['domain'] ) )
-	$data = $inspector->inspect ( $_GET['domain'] );
+	$data = $inspector->inspect ( str_replace( 'http:', '', str_replace( '/', '', $_GET['domain'] ) ) );
 	
 if ( isset ( $_GET['format'] ) && $_GET['format'] == 'json' ) {
 	header('Content-type: application/json');
