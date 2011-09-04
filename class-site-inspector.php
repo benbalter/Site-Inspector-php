@@ -213,12 +213,16 @@
 		//grab the DNS
 		$dns = $this->get_dns_record( $domain );
 		
-		//check for for CNAME or A record on non-www
-		foreach ( $dns as $d ) {
-		
-			foreach ( $d as $record ) {
-				 if ( isset( $record['type'] ) && ( $record['type'] == 'A' || $record['type'] == 'CNAME' ) )
-					 return true;
+		if ( $dns ) {
+			
+			//check for for CNAME or A record on non-www
+			foreach ( $dns as $d ) {
+			
+				foreach ( $d as $record ) {
+					 if ( isset( $record['type'] ) && ( $record['type'] == 'A' || $record['type'] == 'CNAME' ) )
+						 return true;
+				}
+			
 			}
 		
 		}
@@ -270,6 +274,9 @@
 		if ( $dns == '' ) 
 			$dns = $this->get_dns_record();
 	
+		if ( !$dns )
+			return false;
+			
 		foreach ( $dns as $domain ) {
 		
 			foreach ($domain as $record) {
@@ -314,7 +321,7 @@
 		$domain =  $this->remove_http( $this->get_domain( $domain ) );
 		
 		if ( !isset( $this->data['dns'][ $domain ] ) )
-			$this->data['dns'][ $domain ] = dns_get_record( $domain, DNS_ALL - DNS_PTR );
+			@ $this->data['dns'][ $domain ] = dns_get_record( $domain, DNS_ALL - DNS_PTR );
 
 		return $this->dns[ $domain ];
 	
@@ -356,16 +363,22 @@
 		
 		//IP & Host
 		$this->ip = gethostbyname( $this->remove_http( $this->domain ) );
+		
 		$live = false;
-		foreach ( gethostbynamel( $this->remove_http( $this->domain ) ) as $ip ) {
-			
-			//some sites (e.g., privacy.gov) returns localhost as their IP, this prevents scanning self
-			if ( $ip != '127.0.0.1' )
-				$live = true;
-			$this->data['hosts'][$ip] = gethostbyaddr( $ip );
+		
+		if ( $ips = gethostbynamel( $this->remove_http( $this->domain ) ) ) {
+			foreach ( $ips as $ip ) {
+				
+				//some sites (e.g., privacy.gov) returns localhost as their IP, this prevents scanning self
+				if ( $ip != '127.0.0.1' )
+					$live = true;
+					
+				$this->data['hosts'][$ip] = gethostbyaddr( $ip );
+				
+			}
 			
 		}
-
+		
 		//grab the page
 		if ( $live )
 			$data = $this->remote_get( $this->domain );
