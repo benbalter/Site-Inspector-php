@@ -245,10 +245,6 @@
 		
 		$needles = $this->searches[$needle];
 					
-	//	echo "HAYSTACK: $haystack, NEEDLES: ";
-		//print_r( $needles );
-		//echo "\n";
-					
 		foreach ( $needles as $n => $label ) {
 
 			if ( stripos( $haystack, $n ) !== FALSE ) {
@@ -378,7 +374,7 @@
 			}
 			
 		}
-		
+
 		//grab the page
 		if ( $live )
 			$data = $this->remote_get( $this->domain );
@@ -392,7 +388,7 @@
 		} else {
 			$this->status = 'live';
 		}
-		
+
 		$this->body = $data['body'];
 		$this->md5 = md5( $this->body );
 		$this->headers = $data['headers'];
@@ -421,7 +417,7 @@
 		$this->scripts = $this->check_apps( $this->body, $this->searches['scripts'] );
 				
 		asort( $this->data );
-		
+
 		return $this->data;
 	}
 	
@@ -434,29 +430,60 @@
 	 * @since 0.1
 	 */
 	function remote_get( $domain = '' ) {
-		
 		$domain = $this->get_domain( $domain );
-		
+
 		$this->get_dns_record( $this->remove_trailing_slash( $domain ) );
 						
 		$args = array( 'redirection' => 0, 'user-agent' => $this->ua );
-			
+
 		$data = $this->maybe_remote_get( $domain, $args );
-		
+
 		//if there was an error, try to grab the headers to potentially follow a location header
 		if ( is_wp_error( $data ) ) {
 		
 			if ( $data->get_error_message() == 'connect() timed out!' ) 
 				return false;
-		
-			$data = array( 'headers' => wp_remote_retrieve_headers( $domain ) );
-			if ( is_wp_error( $data ) )
+	
+			//use custom get_headers function (rather than WP's because WP doesn't provide headers if there's a redirect and PHP's doesn't allow for timeouts
+			$data = array( 'headers' => $this->get_headers( $domain ) );
+
+			if ( !$data || !$data['headers'] )
 				return false;
-		}
 		
+		}
+
 		$data = $this->maybe_follow_location_header ( $data );
 
 		return $data;	
+	}
+	
+	function get_headers( $domain ) {
+   		$ch = curl_init(); 
+
+    	curl_setopt($ch, CURLOPT_URL, $domain ); 
+    	curl_setopt($ch, CURLOPT_HEADER, true); 
+    	curl_setopt($ch, CURLOPT_NOBODY, true); 
+    	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
+    	curl_setopt($ch, CURLOPT_TIMEOUT, 15); 
+    	curl_setopt($ch, CURLOPT_FAILONERROR, false);
+    	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+		
+    	$data = curl_exec($ch); 
+    	curl_close ($ch);
+    	
+    	if ( !$data )
+    		return false;
+    			
+    	$data = explode("\n", $data );
+  
+   		foreach ( $data as $line => $content ) {
+   			$line = explode( ":", $content, 2 );
+   			isset( $line[1] ) ? $headers[ trim( strtolower( $line[0] ) ) ] = trim( $line[1] ) : $headers[] = trim( $content );
+   		}
+   		  
+   		return array_filter( $headers );
+   		
+   		
 	}
 	
 	function maybe_remote_get( $url, $args ) {
@@ -470,7 +497,7 @@
 	}
 	
 	function maybe_follow_location_header ( $data ) {
-		
+
 		//check flag
 		if ( !$this->follow )
 			return $data;
@@ -478,10 +505,10 @@
 		//if there's a location header, follow
 		if ( !isset ( $data['headers']['location'] ) ) 
 			return $data;
-		
+				
 		//store the redirect 
-		$this->data['redirect'][] = array( 'code' => wp_remote_retrieve_response_code( $data ), 'destination' => $data['headers']['location'] );
-		
+		$this->data['redirect'][] = array( 'code' => substr( $data['headers'][0], 9, 3 ), 'destination' => $data['headers']['location'] );
+				
 		if ( sizeof( $this->data['redirect'] ) < $this->follow )
 			$data = $this->remote_get( $data['headers']['location'] );
 	
