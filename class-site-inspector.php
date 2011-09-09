@@ -59,6 +59,7 @@
 					'phpbb' => 'PhpBB', 
 					'tumblr' => 'tumblr', 
 					'liferay' => 'Liferay',
+					'percussion rhythmyx' => 'Percussion',
 				),
 
 				'analytics' => array(	
