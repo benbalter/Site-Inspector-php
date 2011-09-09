@@ -7,7 +7,17 @@
  * @pacakge siteinspector
  * @license GPL2
  */
-
+ 
+ /**
+  * Hat tip to: 
+  * PHP CMS Detector http://www.phpclasses.org/package/6926-PHP-Detect-software-used-by-a-site-analsying-its-HTML.html and 
+  * Chrome Sniffer https://chrome.google.com/webstore/detail/homgcnaoacgigpkkljjjekpignblkeae 
+  * For providing the initial inspiration and approach
+  */
+  
+/**
+ * Main Site-Inspecting Class
+ */
  class SiteInspector {
 	
 	static $instance;
@@ -124,6 +134,11 @@
         return null;			
 	}
 	
+	/**
+	 * Checks site for HTTPs support
+	 * @param string $domain the domain
+	 * @returns bool true if supports, otherwise false
+	 */
 	function check_https( $domain = '' ) {
 
 		$domain = $this->get_domain( $domain );
@@ -139,12 +154,15 @@
 
 	}
 
+	/**
+	 * Checks site for apps
+	 * @param string $body the site's html
+	 * @param array $apps array of apps to search for
+	 * @param bool $script whether this is a JS file
+	 * @returns array array of apps found
+	 */
 	function check_apps( $body, $apps, $script = false ) {
-		//TO DO
-				
-		/**
-		 * Should Check inside script tags
-		 */
+
 		$output = array();
 		
 		//this is a javascript file, just check the whole thing
@@ -457,6 +475,11 @@
 		return $data;	
 	}
 	
+	/**
+	 * Gets headers returned, used because other transports fail if > 200, redirect, etc.
+	 * @param string $domain the domain
+	 * @returns array assoc. array of headers
+	 */
 	function get_headers( $domain ) {
    		$ch = curl_init(); 
 
@@ -486,6 +509,11 @@
    		
 	}
 	
+	/**
+	 * Checks cashe and then gets URL
+	 * @param string $url the URL to get
+	 * @param array $args args to pass to HTPP API
+	 */
 	function maybe_remote_get( $url, $args ) {
 		if ( !($data = get_transient( $url ) ) ) {
 			$data = wp_remote_get( $url , $args);
@@ -496,6 +524,11 @@
 	
 	}
 	
+	/**
+	 * Get's and follows location header if within redirect limit
+	 * @param array $data the data returned from get
+	 * @returns array $data the data of the actual site
+	 */
 	function maybe_follow_location_header ( $data ) {
 
 		//check flag
@@ -536,6 +569,11 @@
 		
 	}
 	
+	/**
+	 * Strips HTTP:// from URLs
+	 * @param string $input the url
+	 * @returns string URL without HTTP
+	 */
 	function remove_http ( $input ) {
 	
 		$domain = $this->get_domain( $input );
