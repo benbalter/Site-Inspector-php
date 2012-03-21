@@ -335,6 +335,8 @@
 
 		$domain =  $this->remove_http( $this->get_domain( $domain ) );
 		
+		$domain = $this->remove_path( $domain );
+		
 		if ( !isset( $this->data['dns'][ $domain ] ) )
 			@ $this->data['dns'][ $domain ] = dns_get_record( $domain, DNS_ALL - DNS_PTR );
 
@@ -372,7 +374,7 @@
 		//check nonwww
 		$this->nonwww = $this->check_nonwww( );
 		$this->https = $this->check_https( );
-		
+
 		//get DNS
 		$this->get_dns_record( $this->domain );
 		
@@ -380,8 +382,9 @@
 		$this->ip = gethostbyname( $this->remove_http( $this->domain ) );
 		
 		$live = false;
+	
+		if ( $ips = gethostbynamel( $this->remove_http( $this->domain ) ) ) { 	
 		
-		if ( $ips = gethostbynamel( $this->remove_http( $this->domain ) ) ) {
 			foreach ( $ips as $ip ) {
 				
 				//some sites (e.g., privacy.gov) returns localhost as their IP, this prevents scanning self
@@ -393,7 +396,7 @@
 			}
 			
 		}
-
+		
 		//grab the page
 		if ( $live )
 			$data = $this->remote_get( $this->domain );
@@ -415,7 +418,7 @@
 		if ( isset( $data['headers']['server'] ) ) {
 			$this->server_software = $data['headers']['server'];
 		} 
-		
+
 		//merge DNS and hosts from reverse DNS lookup
 		$haystack = array_merge( $this->dns, $this->hosts );
 		
@@ -449,12 +452,13 @@
 	 * @since 0.1
 	 */
 	function remote_get( $domain = '' ) {
+		
 		$domain = $this->get_domain( $domain );
 
 		$this->get_dns_record( $this->remove_trailing_slash( $domain ) );
-						
-		$args = array( 'redirection' => 0, 'user-agent' => $this->ua );
 
+		$args = array( 'redirection' => 0, 'user-agent' => $this->ua );
+		
 		$data = $this->maybe_remote_get( $domain, $args );
 
 		//if there was an error, try to grab the headers to potentially follow a location header
@@ -542,10 +546,14 @@
 				
 		//store the redirect 
 		$this->data['redirect'][] = array( 'code' => substr( $data['headers'][0], 9, 3 ), 'destination' => $data['headers']['location'] );
-				
-		if ( sizeof( $this->data['redirect'] ) < $this->follow )
+
+
+var_dump( sizeof( $this->data['redirect'] ) ); flush();
+
+
+		if ( sizeof( $this->data['redirect'] ) < $this->follow ) 
 			$data = $this->remote_get( $data['headers']['location'] );
-	
+
 		return $data;
 	}
 	
@@ -611,6 +619,20 @@
 		
 		return $domain;
 		
+	}
+
+	/**
+	 * Strips file path from URL, if any
+	 * @param string $input the URL to sanitize
+	 * @return string the host of the URL
+	 */	
+	function remove_path( $input = '' ) {
+
+		$input = $this->get_domain( $input );
+		$input = $this->maybe_add_http( $input );
+		
+		return parse_url( $input, PHP_URL_HOST );
+			
 	}
 	
 	/**
